@@ -100,20 +100,20 @@ func ParseSsOutput(in string) (Socket, error) {
 		return port
 	}
 	pAddr := func(in string) netip.Addr {
-		idx := strings.LastIndex(in, ":")
-		if idx < 0 {
-			log.Fatal("Invalid ss output")
+		switch in {
+		case "Local":
 			return netip.Addr{}
+		default:
+			idx := strings.LastIndex(in, ":")
+			if idx < 0 {
+				log.Fatal("Invalid ss output")
+			}
+			addr := in[:idx]
+			addr = strings.Replace(addr, "[", "", -1)
+			addr = strings.Replace(addr, "]", "", -1)
+			ipa, _ := netip.ParseAddr(addr)
+			return ipa
 		}
-		addr := in[:idx]
-		addr = strings.Replace(addr, "[", "", -1)
-		addr = strings.Replace(addr, "]", "", -1)
-		ipaddr, err := netip.ParseAddr(addr)
-		if err != nil {
-			log.Fatal("Invalid ss output")
-			return netip.Addr{}
-		}
-		return ipaddr
 	}
 
 	sock.Protocol = 6 // TODO(slankdev): this cli only works for tcp

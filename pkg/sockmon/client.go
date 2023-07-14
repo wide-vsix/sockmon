@@ -40,13 +40,10 @@ func GetLocalCacheByTuple(fiveTupleStr string) (*Socket, error) {
 
 func GetLocalCacheByDst(dst string) ([]Socket, error) {
 	socks := []Socket{}
-	daddr, err := netip.ParseAddr(dst)
-	if err != nil {
-		return socks, err
-	}
 	if cache, err := GetLocalCache(); err == nil {
 		for _, val := range cache {
-			if val.Dst == daddr {
+			dstaddr, _ := netip.ParseAddr(dst)
+			if val.Dst == dstaddr {
 				socks = append(socks, val)
 			}
 		}
