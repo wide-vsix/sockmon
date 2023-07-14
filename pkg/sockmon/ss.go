@@ -93,16 +93,19 @@ func ParseSsOutput(in string) (Socket, error) {
 	}
 
 	// misc local functions
-	pPort := func(in string) int {
+	pPort := func(in string) (int, error) {
 		tmp := strings.Split(in, ":")
 		portstr := tmp[len(tmp)-1]
 		port, _ := strconv.Atoi(portstr)
-		return port
+		if port < 1 || port > 65535 {
+			return 0, fmt.Errorf("Invalid IP input detected : %s", in)
+		}
+		return port, nil
 	}
-	pAddr := func(in string) netip.Addr {
+	pAddr := func(in string) (netip.Addr, error) {
 		switch in {
 		case "Local":
-			return netip.Addr{}
+			return netip.Addr{}, fmt.Errorf("Invalid IP input detected : %s", in)
 		default:
 			idx := strings.LastIndex(in, ":")
 			if idx < 0 {
@@ -111,16 +114,39 @@ func ParseSsOutput(in string) (Socket, error) {
 			addr := in[:idx]
 			addr = strings.Replace(addr, "[", "", -1)
 			addr = strings.Replace(addr, "]", "", -1)
-			ipa, _ := netip.ParseAddr(addr)
-			return ipa
+			ipa, err := netip.ParseAddr(addr)
+			if err != nil {
+				return netip.Addr{}, fmt.Errorf("Invalid IP input detected : %s", in)
+			}
+			return ipa, nil
 		}
 	}
 
 	sock.Protocol = 6 // TODO(slankdev): this cli only works for tcp
-	sock.Src = pAddr(items[3])
-	sock.Dst = pAddr(items[4])
-	sock.Sport = pPort(items[3])
-	sock.Dport = pPort(items[4])
+
+	src, err := pAddr(items[3])
+	if err != nil {
+		return sock, err
+	}
+	sock.Src = src
+
+	dst, err := pAddr(items[4])
+	if err != nil {
+		return sock, err
+	}
+	sock.Dst = dst
+
+	sport, err := pPort(items[3])
+	if err != nil {
+		return sock, err
+	}
+	sock.Sport = sport
+
+	dport, err := pPort(items[4])
+	if err != nil {
+		return sock, err
+	}
+	sock.Dport = dport
 
 	items = items[5:]
 

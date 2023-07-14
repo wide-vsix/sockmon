@@ -73,17 +73,18 @@ func fn(cmd *cobra.Command, args []string) error {
 func input(in string) {
 	sock, err := ParseSsOutput(in)
 	if err != nil {
-		log.Fatalf("Invalid ss input. err: %s", err)
-	}
-	cacheStore(sock)
-	if dumpFilename != "" {
-		// By default, it does not dump to file.
-		if err := ssDumpFile(sock); err != nil {
-			log.Fatalf("Cannot dump to file. err: %s", err)
+		log.Errorf("Invalid ss input. err: %s", err)
+	} else {
+		if !isValidOutput(in, sock) {
+			log.Errorf("Invalid output. -> %s", sock.Key())
 		}
-	}
-	if !isValidOutput(in, sock) {
-		log.Errorf("Invalid output. -> %s", sock.Key())
+		cacheStore(sock)
+		if dumpFilename != "" {
+			// By default, it does not dump to file.
+			if err := ssDumpFile(sock); err != nil {
+				log.Fatalf("Cannot dump to file. err: %s", err)
+			}
+		}
 	}
 }
 
