@@ -7,7 +7,6 @@ import (
 
 	// app "github.com/wide-vsix/sockmon/pkg/sockmon"
 	app "sockmon/pkg/sockmon"
-
 )
 
 func main() {
