@@ -3,6 +3,7 @@ package sockmon
 import (
 	"encoding/json"
 	"fmt"
+	"net/netip"
 	"os"
 	"strconv"
 	"strings"
@@ -13,8 +14,8 @@ import (
 
 type Socket struct {
 	Timestamp float64
-	Src       string
-	Dst       string
+	Src       netip.Addr
+	Dst       netip.Addr
 	Protocol  int
 	Sport     int
 	Dport     int
@@ -98,20 +99,21 @@ func ParseSsOutput(in string) (Socket, error) {
 		port, _ := strconv.Atoi(portstr)
 		return port
 	}
-	pAddr := func(in string) string {
-		switch in {
-		case "Local":
-			return in
-		default:
-			idx := strings.LastIndex(in, ":")
-			if idx < 0 {
-				log.Fatal("Invalid ss output")
-			}
-			addr := in[:idx]
-			addr = strings.Replace(addr, "[", "", -1)
-			addr = strings.Replace(addr, "]", "", -1)
-			return addr
+	pAddr := func(in string) netip.Addr {
+		idx := strings.LastIndex(in, ":")
+		if idx < 0 {
+			log.Fatal("Invalid ss output")
+			return netip.Addr{}
 		}
+		addr := in[:idx]
+		addr = strings.Replace(addr, "[", "", -1)
+		addr = strings.Replace(addr, "]", "", -1)
+		ipaddr, err := netip.ParseAddr(addr)
+		if err != nil {
+			log.Fatal("Invalid ss output")
+			return netip.Addr{}
+		}
+		return ipaddr
 	}
 
 	sock.Protocol = 6 // TODO(slankdev): this cli only works for tcp
@@ -348,8 +350,8 @@ func initializeSocket() Socket {
 	sock := Socket{}
 
 	sock.Timestamp = -1
-	sock.Src = "-1"
-	sock.Dst = "-1"
+	sock.Src = netip.Addr{}
+	sock.Dst = netip.Addr{}
 	sock.Protocol = -1
 	sock.Sport = -1
 	sock.Dport = -1

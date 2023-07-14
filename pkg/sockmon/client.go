@@ -3,8 +3,8 @@ package sockmon
 import (
 	"encoding/json"
 	"io"
-	"net"
 	"net/http"
+	"net/netip"
 )
 
 func GetLocalCache() (map[string]Socket, error) {
@@ -40,9 +40,13 @@ func GetLocalCacheByTuple(fiveTupleStr string) (*Socket, error) {
 
 func GetLocalCacheByDst(dst string) ([]Socket, error) {
 	socks := []Socket{}
+	daddr, err := netip.ParseAddr(dst)
+	if err != nil {
+		return socks, err
+	}
 	if cache, err := GetLocalCache(); err == nil {
 		for _, val := range cache {
-			if val.Dst == dst {
+			if val.Dst == daddr {
 				socks = append(socks, val)
 			}
 		}
@@ -50,11 +54,11 @@ func GetLocalCacheByDst(dst string) ([]Socket, error) {
 	return socks, nil
 }
 
-func GetLocalCacheByPrefix(prefix net.IPNet) ([]Socket, error) {
+func GetLocalCacheByPrefix(prefix netip.Prefix) ([]Socket, error) {
 	socks := []Socket{}
 	if cache, err := GetLocalCache(); err == nil {
 		for _, val := range cache {
-			if prefix.Contains(net.ParseIP(val.Dst)) {
+			if prefix.Contains(val.Dst) {
 				socks = append(socks, val)
 			}
 		}
