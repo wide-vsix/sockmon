@@ -10,12 +10,17 @@ import (
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 var cache map[string]Socket
 var dumpFilename string
 var errFilename string
 var bindAddress string
+var dsn string
+var db *gorm.DB
+var filter string
 
 const CACHE_SIZE int = 10000
 
@@ -36,8 +41,25 @@ func fn(cmd *cobra.Command, args []string) error {
 	dumpFilename, _ = cmd.PersistentFlags().GetString("dump-file")
 	errFilename, _ = cmd.PersistentFlags().GetString("error-file")
 	bindAddress, _ = cmd.PersistentFlags().GetString("bind-address")
+	dsn, _ = cmd.PersistentFlags().GetString("postgres")
+	filter, _ = cmd.PersistentFlags().GetString("filter")
+
 	cache = make(map[string]Socket, CACHE_SIZE)
 
+	if dsn != "" {
+		var err error
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err != nil {
+			log.Fatal("Failed to connect to database. err: ", err)
+		}
+		if err := db.AutoMigrate(&SocketExtendedInformation{}); err != nil {
+			log.Fatal("Failed DB initial migration. err: ", err)
+		}
+		if err := db.AutoMigrate(&Socket{}); err != nil {
+			log.Fatal("Failed DB initial migration. err: ", err)
+		}
+
+	}
 	go func() {
 		http.HandleFunc("/", handlerDefault)
 		http.HandleFunc("/rtt", handlerShort)
@@ -45,8 +67,13 @@ func fn(cmd *cobra.Command, args []string) error {
 			log.Fatalf("Invalid bind address. err: %s", err)
 		}
 	}()
+	cmdName := "stdbuf"
+	cmdArgs := []string{"-i0", "-o0", "-e0", "ss", "-ntieEOH"}
+	if filter != "" {
+		cmdArgs = append(cmdArgs, filter)
+	}
 
-	ec := exec.Command("stdbuf", "-i0", "-o0", "-e0", "ss", "-ntieEOH")
+	ec := exec.Command(cmdName, cmdArgs...)
 	stdout, err := ec.StdoutPipe()
 	if err != nil {
 		return err
@@ -78,11 +105,26 @@ func input(in string) {
 		if !isValidOutput(in, sock) {
 			log.Errorf("Invalid output. -> %s", sock.Key())
 		}
+		// to local memory cache
 		cacheStore(sock)
+		// to log file
 		if dumpFilename != "" {
 			// By default, it does not dump to file.
 			if err := ssDumpFile(sock); err != nil {
 				log.Fatalf("Cannot dump to file. err: %s", err)
+			}
+		}
+		// to DB
+		if dsn != "" {
+			log.Infof("create: %s", sock)
+			extRes := db.Create(&sock.Ext)
+			if extRes.Error != nil {
+				log.Errorf("DB update error, ext: %s", sock)
+			}
+			sock.ExtId = sock.Ext.ID
+			sockRes := db.Create(&sock)
+			if sockRes.Error != nil {
+				log.Errorf("DB update error, socket: %s", sock)
 			}
 		}
 	}
@@ -114,4 +156,6 @@ func init() {
 	cmd.PersistentFlags().String("dump-file", "", "Use: sockmon --dump-file <FILENAME> (by default, it does not dump to file.) ")
 	cmd.PersistentFlags().String("error-file", "", "Use: sockmon --error-file <FILENAME> (by default, it does not dump to file.) ")
 	cmd.PersistentFlags().String("bind-address", ":8931", "Use: sockmon --bind-address <Address:Port> ")
+	cmd.PersistentFlags().String("postgres", "", "Use: sockmon --postgres 'postgres://user:password@localhost:5432/dbname' ")
+	cmd.PersistentFlags().String("filter", "", "Use: sockmon --filter '<FILTER>' ss filter.  Please take a look at the iproute2 official documentation. e.g. dport = :80 ")
 }
