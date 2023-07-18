@@ -20,6 +20,7 @@ var errFilename string
 var bindAddress string
 var dsn string
 var db *gorm.DB
+var filter string
 
 const CACHE_SIZE int = 10000
 
@@ -41,6 +42,7 @@ func fn(cmd *cobra.Command, args []string) error {
 	errFilename, _ = cmd.PersistentFlags().GetString("error-file")
 	bindAddress, _ = cmd.PersistentFlags().GetString("bind-address")
 	dsn, _ = cmd.PersistentFlags().GetString("postgres")
+	filter, _ = cmd.PersistentFlags().GetString("filter")
 
 	cache = make(map[string]Socket, CACHE_SIZE)
 
@@ -65,8 +67,13 @@ func fn(cmd *cobra.Command, args []string) error {
 			log.Fatalf("Invalid bind address. err: %s", err)
 		}
 	}()
+	cmdName := "stdbuf"
+	cmdArgs := []string{"-i0", "-o0", "-e0", "ss", "-ntieEOH"}
+	if filter != "" {
+		cmdArgs = append(cmdArgs, filter)
+	}
 
-	ec := exec.Command("stdbuf", "-i0", "-o0", "-e0", "ss", "-ntieEOH")
+	ec := exec.Command(cmdName, cmdArgs...)
 	stdout, err := ec.StdoutPipe()
 	if err != nil {
 		return err
@@ -150,4 +157,5 @@ func init() {
 	cmd.PersistentFlags().String("error-file", "", "Use: sockmon --error-file <FILENAME> (by default, it does not dump to file.) ")
 	cmd.PersistentFlags().String("bind-address", ":8931", "Use: sockmon --bind-address <Address:Port> ")
 	cmd.PersistentFlags().String("postgres", "", "Use: sockmon --postgres 'postgres://user:password@localhost:5432/dbname' ")
+	cmd.PersistentFlags().String("filter", "", "Use: sockmon --filter '<FILTER>' ss filter.  Please take a look at the iproute2 official documentation. e.g. dport = :80 ")
 }
