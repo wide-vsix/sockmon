@@ -9,6 +9,7 @@ import (
 	"os/exec"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -21,6 +22,7 @@ var bindAddress string
 var dsn string
 var db *gorm.DB
 var filter string
+var configFile string
 
 const CACHE_SIZE int = 10000
 
@@ -38,11 +40,16 @@ func fn(cmd *cobra.Command, args []string) error {
 	log := zapLog.Sugar()
 	zap.ReplaceGlobals(zapLog)
 
-	dumpFilename, _ = cmd.PersistentFlags().GetString("dump-file")
-	errFilename, _ = cmd.PersistentFlags().GetString("error-file")
-	bindAddress, _ = cmd.PersistentFlags().GetString("bind-address")
-	dsn, _ = cmd.PersistentFlags().GetString("postgres")
-	filter, _ = cmd.PersistentFlags().GetString("filter")
+	configFile, _ = cmd.PersistentFlags().GetString("config")
+	viper.SetConfigFile(configFile)
+	viper.ReadInConfig()
+
+	// Retrieve config from file or use defaults from command line flags
+	dumpFilename = viper.GetString("dump-file")
+	errFilename = viper.GetString("error-file")
+	bindAddress = viper.GetString("bind-address")
+	dsn = viper.GetString("postgres")
+	filter = viper.GetString("filter")
 
 	cache = make(map[string]Socket, CACHE_SIZE)
 
@@ -163,9 +170,17 @@ func handlerRttOnly(w http.ResponseWriter, r *http.Request) {
 }
 
 func init() {
+	cmd.PersistentFlags().StringP("config", "c", "", "Use: sockmon --config <CONFIG_PATH> or sockmon -c <CONFIG_PATH> ")
+
 	cmd.PersistentFlags().StringP("dump-file", "d", "", "Use: sockmon --dump-file <FILENAME> or sockmon -d <FILENAME> (by default, it does not dump to file.) ")
 	cmd.PersistentFlags().StringP("error-file", "e", "", "Use: sockmon --error-file <FILENAME> or sockmon -e <FILENAME> (by default, it does not dump to file.) ")
 	cmd.PersistentFlags().StringP("bind-address", "b", ":8931", "Use: sockmon --bind-address <Address:Port> or sockmon -b <Address:Port> ")
 	cmd.PersistentFlags().StringP("postgres", "p", "", "Use: sockmon --postgres 'postgres://user:password@localhost:5432/dbname' or sockmon -p 'postgres://user:password@localhost:5432/dbname' ")
 	cmd.PersistentFlags().StringP("filter", "f", "", "Use: sockmon --filter '<FILTER>' or sockmon -f '<FILTER>' ss filter.  Please take a look at the iproute2 official documentation. e.g. dport = :80 ")
+
+	viper.BindPFlag("dump-file", cmd.PersistentFlags().Lookup("dump-file"))
+	viper.BindPFlag("error-file", cmd.PersistentFlags().Lookup("error-file"))
+	viper.BindPFlag("bind-address", cmd.PersistentFlags().Lookup("bind-address"))
+	viper.BindPFlag("postgres", cmd.PersistentFlags().Lookup("postgres"))
+	viper.BindPFlag("filter", cmd.PersistentFlags().Lookup("filter"))
 }
