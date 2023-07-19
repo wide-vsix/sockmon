@@ -16,17 +16,13 @@ $ make
 $ bin/sockmon 
 ```
 
-- get local cache by another processes.
+- get local cache by another processes via REST API
 ```
 $ curl localhost:8931
 yas-nyan@mptcp:~$ curl localhost:8931
 {
   "2001:db8::1/64:ff9b::8efa:c60e/6/53066/80": {
-    "ID": 0,
-    "CreatedAt": "0001-01-01T00:00:00Z",
-    "UpdatedAt": "0001-01-01T00:00:00Z",
-    "DeletedAt": null,
-    "Timestamp": 1689652017.012,
+    "Timestamp": "2023-07-19T13:29:39.47647492+09:00",
     "Src": "2001:db8::1",
     "Dst": "64:ff9b::8efa:c60e",
     "Protocol": 6,
@@ -86,4 +82,13 @@ yas-nyan@mptcp:~$ curl localhost:8931
   }
 }
 
+```
+
+- you can filter record with query params.
+
+```
+- 
+curl localhost:8931/?dport=5201
+curl localhost:8931/?src=2001:db8::1
+curl localhost:8931/?src=2001:db8::1&dst=64:ff9b::192.0.2.1
 ```
