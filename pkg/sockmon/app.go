@@ -172,7 +172,7 @@ func handlerRttOnly(w http.ResponseWriter, r *http.Request) {
 }
 
 func init() {
-	cmd.PersistentFlags().StringP("config", "c", "", "Use: sockmon --config <CONFIG_PATH> or sockmon -c <CONFIG_PATH> ")
+	cmd.PersistentFlags().StringP("config", "c", "", "Use: sockmon --config <CONFIG_PATH> or sockmon -c <CONFIG_PATH>  Various file formats such as YML, TOML and JSON are available.")
 
 	cmd.PersistentFlags().StringP("dump-file", "d", "", "Use: sockmon --dump-file <FILENAME> or sockmon -d <FILENAME> (by default, it does not dump to file.) ")
 	cmd.PersistentFlags().StringP("error-file", "e", "", "Use: sockmon --error-file <FILENAME> or sockmon -e <FILENAME> (by default, it does not dump to file.) ")

@@ -92,3 +92,30 @@ curl localhost:8931/?dport=5201
 curl localhost:8931/?src=2001:db8::1
 curl localhost:8931/?src=2001:db8::1&dst=64:ff9b::192.0.2.1
 ```
+
+## config and args
+
+- args
+```
+$ sockmon -h
+Usage:
+  sockmon [flags]
+
+Flags:
+  -b, --bind-address string   Use: sockmon --bind-address <Address:Port> or sockmon -b <Address:Port>  (default ":8931")
+  -c, --config string         Use: sockmon --config <CONFIG_PATH> or sockmon -c <CONFIG_PATH>  Various file formats such as YML, TOML and JSON are available.
+  -d, --dump-file string      Use: sockmon --dump-file <FILENAME> or sockmon -d <FILENAME> (by default, it does not dump to file.) 
+  -e, --error-file string     Use: sockmon --error-file <FILENAME> or sockmon -e <FILENAME> (by default, it does not dump to file.) 
+  -f, --filter string         Use: sockmon --filter '<FILTER>' or sockmon -f '<FILTER>' ss filter.  Please take a look at the iproute2 official documentation. e.g. dport = :80 
+  -h, --help                  help for sockmon
+  -p, --postgres string       Use: sockmon --postgres 'postgres://user:password@localhost:5432/dbname' or sockmon -p 'postgres://user:password@localhost:5432/dbname'
+```
+
+- config format
+```yml
+dump-file: /var/log/sockmon.log
+error-file: /var/log/sockmon.error.log
+bind-address: '[::]:8931'
+postgres: 'postgres://DB_USER:DB_PASSWORD@localhost:5432/DB_NAME'
+filter: 'dport = :443'
+```
