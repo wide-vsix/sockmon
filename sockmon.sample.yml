@@ -1,0 +1,5 @@
+dump-file: /var/log/sockmon.log
+error-file: /var/log/sockmon.error.log
+bind-address: '[::]:8931'
+postgres: 'postgres://DB_USER:DB_PASSWORD@localhost:5432/DB_NAME'
+filter: 'dport = :443'
