@@ -86,8 +86,10 @@ func fn(cmd *cobra.Command, args []string) error {
 		log.Errorf("%v\n", err)
 		return err
 	}
-
-	log.Infof("starting. dump-file: '%s' bind-address'%s'", dumpFilename, bindAddress)
+	log.Infof("sockmon starting.")
+	for k, v := range viper.AllSettings() {
+		log.Debugf("\t %s -> %s", k, v)
+	}
 
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
