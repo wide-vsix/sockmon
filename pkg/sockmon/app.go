@@ -163,9 +163,9 @@ func handlerRttOnly(w http.ResponseWriter, r *http.Request) {
 }
 
 func init() {
-	cmd.PersistentFlags().String("dump-file", "", "Use: sockmon --dump-file <FILENAME> (by default, it does not dump to file.) ")
-	cmd.PersistentFlags().String("error-file", "", "Use: sockmon --error-file <FILENAME> (by default, it does not dump to file.) ")
-	cmd.PersistentFlags().String("bind-address", ":8931", "Use: sockmon --bind-address <Address:Port> ")
-	cmd.PersistentFlags().String("postgres", "", "Use: sockmon --postgres 'postgres://user:password@localhost:5432/dbname' ")
-	cmd.PersistentFlags().String("filter", "", "Use: sockmon --filter '<FILTER>' ss filter.  Please take a look at the iproute2 official documentation. e.g. dport = :80 ")
+	cmd.PersistentFlags().StringP("dump-file", "d", "", "Use: sockmon --dump-file <FILENAME> or sockmon -d <FILENAME> (by default, it does not dump to file.) ")
+	cmd.PersistentFlags().StringP("error-file", "e", "", "Use: sockmon --error-file <FILENAME> or sockmon -e <FILENAME> (by default, it does not dump to file.) ")
+	cmd.PersistentFlags().StringP("bind-address", "b", ":8931", "Use: sockmon --bind-address <Address:Port> or sockmon -b <Address:Port> ")
+	cmd.PersistentFlags().StringP("postgres", "p", "", "Use: sockmon --postgres 'postgres://user:password@localhost:5432/dbname' or sockmon -p 'postgres://user:password@localhost:5432/dbname' ")
+	cmd.PersistentFlags().StringP("filter", "f", "", "Use: sockmon --filter '<FILTER>' or sockmon -f '<FILTER>' ss filter.  Please take a look at the iproute2 official documentation. e.g. dport = :80 ")
 }
