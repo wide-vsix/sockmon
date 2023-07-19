@@ -52,10 +52,7 @@ func fn(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			log.Fatal("Failed to connect to database. err: ", err)
 		}
-		if err := db.AutoMigrate(&SocketExtendedInformation{}); err != nil {
-			log.Fatal("Failed DB initial migration. err: ", err)
-		}
-		if err := db.AutoMigrate(&Socket{}); err != nil {
+		if err := db.AutoMigrate(&SockmonStat{}); err != nil {
 			log.Fatal("Failed DB initial migration. err: ", err)
 		}
 
@@ -117,13 +114,17 @@ func input(in string) {
 		// to DB
 		if dsn != "" {
 			log.Infof("create: %s", sock)
-			extRes := db.Create(&sock.Ext)
-			if extRes.Error != nil {
-				log.Errorf("DB update error, ext: %s", sock)
+			stat := SockmonStat{
+				Timestamp:                 sock.Timestamp,
+				Src:                       sock.Src,
+				Dst:                       sock.Dst,
+				Protocol:                  sock.Protocol,
+				Sport:                     sock.Sport,
+				Dport:                     sock.Dport,
+				SocketExtendedInformation: sock.Ext,
 			}
-			sock.ExtId = sock.Ext.ID
-			sockRes := db.Create(&sock)
-			if sockRes.Error != nil {
+			statRes := db.Create(&stat)
+			if statRes.Error != nil {
 				log.Errorf("DB update error, socket: %s", sock)
 			}
 		}

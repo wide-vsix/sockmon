@@ -3,19 +3,18 @@ package sockmon
 import (
 	"fmt"
 	"net/netip"
+	"time"
 
 	"gorm.io/gorm"
 )
 
 type Socket struct {
-	gorm.Model
-	Timestamp float64
+	Timestamp time.Time
 	Src       netip.Addr `gorm:"type:inet"`
 	Dst       netip.Addr `gorm:"type:inet"`
 	Protocol  int
 	Sport     int
 	Dport     int
-	ExtId     uint `gorm:"foreignKey:ExtID;references:ID"`
 	Ext       SocketExtendedInformation
 }
 
@@ -31,7 +30,6 @@ func (sock Socket) String() string {
 }
 
 type SocketExtendedInformation struct {
-	gorm.Model
 	Ino           int     // "ino:0",
 	Sk            string  // "sk:1e3ed",
 	Ts            bool    // "ts",
@@ -76,4 +74,16 @@ type SocketExtendedInformation struct {
 	RcvSpace      int     // "rcv_space:13640",
 	RcvSsthresh   int     // "rcv_ssthresh:64172",
 	Minrtt        float32 // "minrtt:0.008",
+}
+
+// for gorm
+type SockmonStat struct {
+	gorm.Model
+	Timestamp time.Time
+	Src       netip.Addr `gorm:"type:inet"`
+	Dst       netip.Addr `gorm:"type:inet"`
+	Protocol  int
+	Sport     int
+	Dport     int
+	SocketExtendedInformation
 }

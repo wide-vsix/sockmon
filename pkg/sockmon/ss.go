@@ -253,7 +253,7 @@ func ParseSsOutput(in string) (Socket, error) {
 			log.Errorf("unsupport %s\n", item)
 		}
 	}
-	sock.Timestamp = float64(time.Now().UnixMilli()) / 1000
+	sock.Timestamp = time.Now()
 	return sock, nil
 }
 
@@ -281,10 +281,10 @@ func ssDumpFile(sock Socket) error {
 func cacheStore(sock Socket) {
 	if _, ok := cache[sock.Key()]; !ok && len(cache) == CACHE_SIZE {
 		var lruFiveTuple string
-		var lruTimestamp float64
+		var lruTimestamp time.Time
 
 		// TODO: (kanaya) This block should be refactored
-		// lruTimestamp must be initialized with a sufficiently large value
+		// Initialize lruTimestamp with current time
 		for k, v := range cache {
 			lruFiveTuple = k
 			lruTimestamp = v.Timestamp
@@ -292,7 +292,7 @@ func cacheStore(sock Socket) {
 		}
 
 		for k, v := range cache {
-			if v.Timestamp < lruTimestamp {
+			if v.Timestamp.Before(lruTimestamp) {
 				lruFiveTuple = k
 				lruTimestamp = v.Timestamp
 			}
@@ -306,7 +306,7 @@ func cacheStore(sock Socket) {
 func initializeSocket() Socket {
 	sock := Socket{}
 
-	sock.Timestamp = -1
+	sock.Timestamp = time.Time{}
 	sock.Src = netip.Addr{}
 	sock.Dst = netip.Addr{}
 	sock.Protocol = -1
