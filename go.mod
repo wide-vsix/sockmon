@@ -1,4 +1,4 @@
-module sockmon
+module github.com/wide-vsix/sockmon
 
 go 1.18
 
