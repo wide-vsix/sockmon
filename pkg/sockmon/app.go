@@ -62,7 +62,7 @@ func fn(cmd *cobra.Command, args []string) error {
 	}
 	go func() {
 		http.HandleFunc("/", handlerDefault)
-		http.HandleFunc("/rtt", handlerShort)
+		http.HandleFunc("/rtt", handlerRttOnly)
 		if err := http.ListenAndServe(bindAddress, nil); err != nil {
 			log.Fatalf("Invalid bind address. err: %s", err)
 		}
@@ -131,7 +131,11 @@ func input(in string) {
 }
 
 func handlerDefault(w http.ResponseWriter, r *http.Request) {
-	out, err := json.MarshalIndent(&cache, "", "  ")
+	// filter by query parameters
+	params := r.URL.Query()
+	c := FilterByParams(params, cache)
+	out, err := json.MarshalIndent(&c, "", "  ")
+
 	if err != nil {
 		io.WriteString(w, fmt.Sprintf("{'err':'%s'}\n", err.Error()))
 		return
@@ -139,11 +143,16 @@ func handlerDefault(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, fmt.Sprintf("%s\n", string(out)))
 }
 
-func handlerShort(w http.ResponseWriter, r *http.Request) {
+func handlerRttOnly(w http.ResponseWriter, r *http.Request) {
+	// filter by query parameters
+	params := r.URL.Query()
+	c := FilterByParams(params, cache)
+
 	rttcache := map[string]float32{}
-	for key, val := range cache {
+	for key, val := range c {
 		rttcache[key] = val.Ext.Rtt
 	}
+
 	out, err := json.MarshalIndent(&rttcache, "", "  ")
 	if err != nil {
 		io.WriteString(w, fmt.Sprintf("{'err':'%s'}\n", err.Error()))
