@@ -15,6 +15,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var Version = "dev"
+
 var cache map[string]Socket
 var dumpFilename string
 var errFilename string
@@ -27,8 +29,9 @@ var configFile string
 const CACHE_SIZE int = 10000
 
 var cmd *cobra.Command = &cobra.Command{
-	Use:  "sockmon",
-	RunE: fn,
+	Use:     "sockmon",
+	RunE:    fn,
+	Version: Version,
 }
 
 func NewCommand() *cobra.Command {

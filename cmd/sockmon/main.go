@@ -5,8 +5,7 @@ import (
 	"os"
 	"time"
 
-	// app "github.com/wide-vsix/sockmon/pkg/sockmon"
-	app "sockmon/pkg/sockmon"
+	app "github.com/wide-vsix/sockmon/pkg/sockmon"
 )
 
 func main() {
