@@ -86,11 +86,18 @@ yas-nyan@mptcp:~$ curl localhost:8931
 
 - you can filter record with query params.
 
+for all fileds.
 ```
-- 
 curl localhost:8931/?dport=5201
 curl localhost:8931/?src=2001:db8::1
 curl localhost:8931/?src=2001:db8::1&dst=64:ff9b::192.0.2.1
+```
+
+One optional field
+
+```
+curl localhost:8931/only?field=Mss
+curl localhost:8931/only?filed=Minrtt?src=2001:db8::1
 ```
 
 ## config and args
