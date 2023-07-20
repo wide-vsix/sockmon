@@ -8,12 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"go.uber.org/zap"
-)
-
-var (
-	log = zap.S()
 )
 
 func ParseSsOutput(in string) (Socket, error) {
