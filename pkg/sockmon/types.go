@@ -74,6 +74,9 @@ type SocketExtendedInformation struct {
 	RcvSpace      int     // "rcv_space:13640",
 	RcvSsthresh   int     // "rcv_ssthresh:64172",
 	Minrtt        float32 // "minrtt:0.008",
+	Notsent       int     // "notsent:391678",
+	Sacked        int     // "sacked:113",
+	Lost          int     //lost:1
 }
 
 // for gorm
