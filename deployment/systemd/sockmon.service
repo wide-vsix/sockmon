@@ -1,0 +1,14 @@
+[Unit]
+Description=Sockmon TCP stats monitor
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/sockmon -c /etc/sockmon/config.yml 
+
+Restart=on-failure 
+RestartSec=5s 
+
+[Install]
+WantedBy=multi-user.target
