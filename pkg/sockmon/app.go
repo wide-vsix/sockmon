@@ -29,8 +29,7 @@ var dsn string
 var db *gorm.DB
 var filter string
 var configFile string
-
-const CACHE_SIZE int = 10000
+var CACHE_SIZE int
 
 var cmd *cobra.Command = &cobra.Command{
 	Use:     "sockmon",
@@ -53,6 +52,7 @@ func fn(cmd *cobra.Command, args []string) error {
 	bindAddress = viper.GetString("bind-address")
 	dsn = viper.GetString("postgres")
 	filter = viper.GetString("filter")
+	CACHE_SIZE = viper.GetInt("cache-size")
 
 	// Change logger initialisation
 	cfg := zap.NewDevelopmentConfig()
@@ -256,6 +256,7 @@ func init() {
 	cmd.PersistentFlags().StringP("bind-address", "b", ":8931", "Use: sockmon --bind-address <Address:Port> or sockmon -b <Address:Port> ")
 	cmd.PersistentFlags().StringP("postgres", "p", "", "Use: sockmon --postgres 'postgres://user:password@localhost:5432/dbname' or sockmon -p 'postgres://user:password@localhost:5432/dbname' ")
 	cmd.PersistentFlags().StringP("filter", "f", "", "Use: sockmon --filter '<FILTER>' or sockmon -f '<FILTER>' ss filter.  Please take a look at the iproute2 official documentation. e.g. dport = :80 ")
+	cmd.PersistentFlags().Int32P("cache-size", "s", 10000, "Use: sockmon --cache-size '<CACHE_SIZE>' or sockmon -s '<CACHE_SIZE>'. The number of records in the local cache to store.  ")
 
 	cmd.PersistentFlags().BoolP("debug", "D", false, "Use: sockmon --debug or sockmon -D to enable debug mode")
 
@@ -264,6 +265,7 @@ func init() {
 	viper.BindPFlag("bind-address", cmd.PersistentFlags().Lookup("bind-address"))
 	viper.BindPFlag("postgres", cmd.PersistentFlags().Lookup("postgres"))
 	viper.BindPFlag("filter", cmd.PersistentFlags().Lookup("filter"))
+	viper.BindPFlag("cache-size", cmd.PersistentFlags().Lookup("cache-size"))
 
 	// Bind debug flag to viper
 	viper.BindPFlag("debug", cmd.PersistentFlags().Lookup("debug"))
