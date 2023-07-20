@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"reflect"
 
+	"github.com/k0kubun/pp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -166,12 +167,13 @@ func handlerDefault(w http.ResponseWriter, r *http.Request) {
 		mapType := reflect.MapOf(reflect.TypeOf(""), fieldType)
 		rtnMap := reflect.MakeMap(mapType)
 
+		pp.Println(rtnMap)
 		for k, v := range c {
 			val := reflect.ValueOf(v.Ext).FieldByName(onlyFiled).Interface() // Socket.Extの中の、"onlyFiled"のフィールドの値を取得。
 			rtnMap.SetMapIndex(reflect.ValueOf(k), reflect.ValueOf(val))     // mapを埋める
 		}
 
-		out, err := json.MarshalIndent(rtnMap, "", "  ")
+		out, err := json.MarshalIndent(rtnMap.Interface(), "", "  ") // rtnMapをInterfaceに変換
 		if err != nil {
 			io.WriteString(w, fmt.Sprintf("{'err':'%s'}\n", err.Error()))
 			return
