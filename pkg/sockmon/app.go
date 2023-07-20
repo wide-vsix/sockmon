@@ -11,12 +11,15 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"moul.io/zapgorm2"
 )
 
 var Version = "dev"
 
+var log *zap.SugaredLogger
 var cache map[string]Socket
 var dumpFilename string
 var errFilename string
@@ -39,10 +42,6 @@ func NewCommand() *cobra.Command {
 }
 
 func fn(cmd *cobra.Command, args []string) error {
-	zapLog, _ := zap.NewDevelopment()
-	log := zapLog.Sugar()
-	zap.ReplaceGlobals(zapLog)
-
 	configFile, _ = cmd.PersistentFlags().GetString("config")
 	viper.SetConfigFile(configFile)
 	viper.ReadInConfig()
@@ -54,11 +53,26 @@ func fn(cmd *cobra.Command, args []string) error {
 	dsn = viper.GetString("postgres")
 	filter = viper.GetString("filter")
 
+	// Change logger initialisation
+	cfg := zap.NewDevelopmentConfig()
+	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	cfg.OutputPaths = []string{"stdout"}      // Info and Debug logs to stdout
+	cfg.ErrorOutputPaths = []string{"stderr"} // Error and Fatal logs to stderr
+	// set log level accouring to the config.
+	if viper.GetBool("debug") {
+		cfg.Level.SetLevel(zap.DebugLevel)
+	} else {
+		cfg.Level.SetLevel(zap.InfoLevel)
+	}
+	zapLog, _ := cfg.Build()
+	log = zapLog.Sugar()
+
 	cache = make(map[string]Socket, CACHE_SIZE)
 
 	if dsn != "" {
 		var err error
-		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		gormLogger := zapgorm2.New(zapLog)
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: gormLogger})
 		if err != nil {
 			log.Fatal("Failed to connect to database. err: ", err)
 		}
@@ -183,9 +197,14 @@ func init() {
 	cmd.PersistentFlags().StringP("postgres", "p", "", "Use: sockmon --postgres 'postgres://user:password@localhost:5432/dbname' or sockmon -p 'postgres://user:password@localhost:5432/dbname' ")
 	cmd.PersistentFlags().StringP("filter", "f", "", "Use: sockmon --filter '<FILTER>' or sockmon -f '<FILTER>' ss filter.  Please take a look at the iproute2 official documentation. e.g. dport = :80 ")
 
+	cmd.PersistentFlags().BoolP("debug", "D", false, "Use: sockmon --debug or sockmon -D to enable debug mode")
+
 	viper.BindPFlag("dump-file", cmd.PersistentFlags().Lookup("dump-file"))
 	viper.BindPFlag("error-file", cmd.PersistentFlags().Lookup("error-file"))
 	viper.BindPFlag("bind-address", cmd.PersistentFlags().Lookup("bind-address"))
 	viper.BindPFlag("postgres", cmd.PersistentFlags().Lookup("postgres"))
 	viper.BindPFlag("filter", cmd.PersistentFlags().Lookup("filter"))
+
+	// Bind debug flag to viper
+	viper.BindPFlag("debug", cmd.PersistentFlags().Lookup("debug"))
 }

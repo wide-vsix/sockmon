@@ -8,6 +8,7 @@ require (
 	go.uber.org/zap v1.24.0
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/gorm v1.25.2
+	moul.io/zapgorm2 v1.3.0
 )
 
 require (
