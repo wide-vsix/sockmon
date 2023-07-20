@@ -147,6 +147,26 @@ func ParseSsOutput(in string) (Socket, error) {
 		}
 		return val
 	}
+	parseSendBufLimited := func(item string) (int, float64, error) {
+		split := strings.Split(item, "(")
+		if len(split) != 2 {
+			return 0, 0, fmt.Errorf("invalid format")
+		}
+
+		durationStr := strings.TrimSuffix(split[0], "ms")
+		duration, err := strconv.Atoi(strings.Split(durationStr, ":")[1])
+		if err != nil {
+			return 0, 0, err
+		}
+
+		percentageStr := strings.TrimSuffix(split[1], "%)")
+		percentage, err := strconv.ParseFloat(percentageStr, 64)
+		if err != nil {
+			return 0, 0, err
+		}
+
+		return duration, percentage / 100, nil // convert parcemtage to ratio
+	}
 
 	for idx := 0; idx < len(items); idx++ {
 		item := items[idx]
@@ -228,6 +248,15 @@ func ParseSsOutput(in string) (Socket, error) {
 				sock.Ext.Notsent = pInt1(item)
 			case strings.Contains(item, "lost"):
 				sock.Ext.Lost = pInt1(item)
+			case strings.Contains(item, "sndbuf_limited"):
+				duration, ratio, err := parseSendBufLimited(item)
+				if err != nil {
+					log.Warnf("can not parse: %s\n", item)
+					break
+				}
+				sock.Ext.SendbufLimitedDuration = duration
+				sock.Ext.SendbufLimitedRatio = ratio
+
 			default:
 				log.Warnf("unknown key-value type %s\n", item)
 			}
