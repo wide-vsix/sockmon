@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os/exec"
+	"reflect"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -84,6 +85,7 @@ func fn(cmd *cobra.Command, args []string) error {
 	go func() {
 		http.HandleFunc("/", handlerDefault)
 		http.HandleFunc("/rtt", handlerRttOnly)
+		http.HandleFunc("/only", handerByFieldName)
 		if err := http.ListenAndServe(bindAddress, nil); err != nil {
 			log.Fatalf("Invalid bind address. err: %s", err)
 		}
@@ -157,14 +159,72 @@ func input(in string) {
 	}
 }
 
-func handlerDefault(w http.ResponseWriter, r *http.Request) {
-	// filter by query parameters
+func handerByFieldName(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
-	c := FilterByParams(params, cache)
-	out, err := json.MarshalIndent(&c, "", "  ")
 
+	c := FilterByParams(params, cache)
+
+	onlyParams, ok := params["field"]
+	if !ok {
+		http.Error(w, "Missing ?field= query parameter", http.StatusBadRequest)
+		return
+	}
+
+	// パラメータは一つと仮定する
+	onlyFiled := onlyParams[0]
+
+	// onlyFiledがExtに存在するかチェック
+	v := reflect.ValueOf(SocketExtendedInformation{})
+	vf := v.FieldByName(onlyFiled)
+	if !(vf.IsValid()) {
+		http.Error(w, fmt.Sprintf("Invalid input ?filed=%s", onlyFiled), http.StatusBadRequest)
+		return
+	}
+
+	// 返信用のmapを作る
+	fieldType := vf.Type()
+	mapType := reflect.MapOf(reflect.TypeOf(""), fieldType) // map[string]<filedType>
+	rtnMap := reflect.MakeMap(mapType)
+
+	for k, v := range c {
+		extVal := reflect.ValueOf(v.Ext)
+		// .ExtがSocketに存在しない場合。これは絶対に起こり得ないが、reflectionしているので念のため。
+		if extVal.Kind() != reflect.Struct {
+			log.Errorf("An exception occurred that should never have happened during reflection.  extVal.Kind: %s  reflect.Struct: %s", extVal.Kind(), reflect.Struct)
+			http.Error(w, fmt.Sprintf("Unexpected type for Ext in Socket %s", k), http.StatusInternalServerError)
+			return
+		}
+		// ここも事前にチェックしているが、reflectionしているので念のため。
+		val := extVal.FieldByName(onlyFiled)
+		if !val.IsValid() {
+			log.Errorf("An exception occurred that should never have happened during reflection. extVal.Kind: %s  reflect.Struct: %s", extVal.Kind(), reflect.Struct)
+			http.Error(w, fmt.Sprintf("Field %s does not exist in Socket %s", onlyFiled, k), http.StatusInternalServerError)
+			return
+		}
+
+		rtnMap.SetMapIndex(reflect.ValueOf(k), val)
+	}
+
+	// rtnMapをInterfaceに変換してjsonにエンコード
+	out, err := json.MarshalIndent(rtnMap.Interface(), "", "  ")
 	if err != nil {
-		io.WriteString(w, fmt.Sprintf("{'err':'%s'}\n", err.Error()))
+		http.Error(w, fmt.Sprintf("Failed to encode result: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	io.WriteString(w, string(out))
+	return
+
+}
+
+func handlerDefault(w http.ResponseWriter, r *http.Request) {
+	params := r.URL.Query()
+
+	c := FilterByParams(params, cache)
+
+	out, err := json.MarshalIndent(&c, "", "  ")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to encode result: %v", err), http.StatusInternalServerError)
 		return
 	}
 	io.WriteString(w, fmt.Sprintf("%s\n", string(out)))
@@ -182,7 +242,7 @@ func handlerRttOnly(w http.ResponseWriter, r *http.Request) {
 
 	out, err := json.MarshalIndent(&rttcache, "", "  ")
 	if err != nil {
-		io.WriteString(w, fmt.Sprintf("{'err':'%s'}\n", err.Error()))
+		http.Error(w, fmt.Sprintf("Failed to encode result: %v", err), http.StatusInternalServerError)
 		return
 	}
 	io.WriteString(w, fmt.Sprintf("%s\n", string(out)))
