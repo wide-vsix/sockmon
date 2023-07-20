@@ -256,7 +256,6 @@ func ParseSsOutput(in string) (Socket, error) {
 				}
 				sock.Ext.SendbufLimitedDuration = duration
 				sock.Ext.SendbufLimitedRatio = ratio
-
 			default:
 				log.Warnf("unknown key-value type %s\n", item)
 			}
