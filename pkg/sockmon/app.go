@@ -139,7 +139,7 @@ func input(in string) {
 		}
 		// to DB
 		if dsn != "" {
-			log.Infof("create: %s", sock)
+			log.Debugf("create db record: %s", sock)
 			stat := SockmonStat{
 				Timestamp:                 sock.Timestamp,
 				Src:                       sock.Src,

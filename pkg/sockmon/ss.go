@@ -147,6 +147,26 @@ func ParseSsOutput(in string) (Socket, error) {
 		}
 		return val
 	}
+	parseSendBufLimited := func(item string) (int, float64, error) {
+		split := strings.Split(item, "(")
+		if len(split) != 2 {
+			return 0, 0, fmt.Errorf("invalid format")
+		}
+
+		durationStr := strings.TrimSuffix(split[0], "ms")
+		duration, err := strconv.Atoi(strings.Split(durationStr, ":")[1])
+		if err != nil {
+			return 0, 0, err
+		}
+
+		percentageStr := strings.TrimSuffix(split[1], "%)")
+		percentage, err := strconv.ParseFloat(percentageStr, 64)
+		if err != nil {
+			return 0, 0, err
+		}
+
+		return duration, percentage / 100, nil // convert parcemtage to ratio
+	}
 
 	for idx := 0; idx < len(items); idx++ {
 		item := items[idx]
@@ -228,6 +248,14 @@ func ParseSsOutput(in string) (Socket, error) {
 				sock.Ext.Notsent = pInt1(item)
 			case strings.Contains(item, "lost"):
 				sock.Ext.Lost = pInt1(item)
+			case strings.Contains(item, "sndbuf_limited"):
+				duration, ratio, err := parseSendBufLimited(item)
+				if err != nil {
+					log.Warnf("can not parse: %s\n", item)
+					break
+				}
+				sock.Ext.SendbufLimitedDuration = duration
+				sock.Ext.SendbufLimitedRatio = ratio
 			default:
 				log.Warnf("unknown key-value type %s\n", item)
 			}
@@ -240,10 +268,8 @@ func ParseSsOutput(in string) (Socket, error) {
 			sock.Ext.Sack = true
 		case item == "ecn":
 			sock.Ext.Ecn = true
-		case item == "ecn":
-			sock.Ext.Ecn = true
 		case item == "ecnseen":
-			sock.Ext.Ecnseen = true
+			sock.Ext.EcnSeen = true
 		case item == "send":
 			sock.Ext.Send = pInt64bps(items[idx+1])
 			idx++
@@ -321,6 +347,7 @@ func initializeSocket() Socket {
 	sock.Ext.Ts = false
 	sock.Ext.Sack = false
 	sock.Ext.Ecn = false
+	sock.Ext.EcnSeen = false
 	sock.Ext.WscaleSnd = -1
 	sock.Ext.WscaleRcv = -1
 	sock.Ext.Rto = -1
@@ -360,7 +387,11 @@ func initializeSocket() Socket {
 	sock.Ext.RcvSpace = -1
 	sock.Ext.RcvSsthresh = -1
 	sock.Ext.Minrtt = -1
-
+	sock.Ext.Notsent = -1
+	sock.Ext.Sacked = -1
+	sock.Ext.Lost = -1
+	sock.Ext.SendbufLimitedDuration = -1
+	sock.Ext.SendbufLimitedRatio = -1
 	return sock
 }
 
@@ -510,6 +541,22 @@ func isValidOutput(in string, sock Socket) bool {
 				if sock.Ext.Pmtu == -1 {
 					errString += "pmtu "
 				}
+			case strings.Contains(item, "notsent"):
+				if sock.Ext.Notsent == -1 {
+					errString += "notent "
+				}
+			case strings.Contains(item, "sacked"):
+				if sock.Ext.Sacked == -1 {
+					errString += "sacked "
+				}
+			case strings.Contains(item, "lost"):
+				if sock.Ext.Lost == -1 {
+					errString += "lost "
+				}
+			case strings.Contains(item, "sndbuf_limited"):
+				if sock.Ext.SendbufLimitedDuration == -1 || sock.Ext.SendbufLimitedRatio == -1 {
+					errString += "sndbuf_limited "
+				}
 			}
 
 		case strings.Contains(item, "app_limited"):
@@ -527,6 +574,10 @@ func isValidOutput(in string, sock Socket) bool {
 		case item == "ecn":
 			if !sock.Ext.Ecn {
 				errString += "ecn "
+			}
+		case item == "ecnseen":
+			if !sock.Ext.Ecn {
+				errString += "ecnseen "
 			}
 		case item == "send":
 			if sock.Ext.Send == -1 {
