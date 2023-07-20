@@ -35,6 +35,7 @@ type SocketExtendedInformation struct {
 	Ts            bool    // "ts",
 	Sack          bool    // "sack",
 	Ecn           bool    // "ecn",
+	Ecnseen       bool    // "ecnseen",
 	WscaleSnd     int     // "wscale:7,7",
 	WscaleRcv     int     // "wscale:7,7",
 	Rto           int     // "rto:204",
@@ -74,6 +75,9 @@ type SocketExtendedInformation struct {
 	RcvSpace      int     // "rcv_space:13640",
 	RcvSsthresh   int     // "rcv_ssthresh:64172",
 	Minrtt        float32 // "minrtt:0.008",
+	Notsent       int     // "notsent:391678",
+	Sacked        int     // "sacked:113",
+	Lost          int     //lost:1
 }
 
 // for gorm

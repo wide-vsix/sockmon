@@ -222,8 +222,14 @@ func ParseSsOutput(in string) (Socket, error) {
 				sock.Ext.Mss = pInt1(item)
 			case strings.Contains(item, "pmtu"):
 				sock.Ext.Pmtu = pInt1(item)
+			case strings.Contains(item, "sacked"):
+				sock.Ext.Sacked = pInt1(item)
+			case strings.Contains(item, "notsent"):
+				sock.Ext.Notsent = pInt1(item)
+			case strings.Contains(item, "lost"):
+				sock.Ext.Lost = pInt1(item)
 			default:
-				log.Errorf("unknown key-value type %s\n", item)
+				log.Warnf("unknown key-value type %s\n", item)
 			}
 
 		case strings.Contains(item, "app_limited"):
@@ -234,6 +240,10 @@ func ParseSsOutput(in string) (Socket, error) {
 			sock.Ext.Sack = true
 		case item == "ecn":
 			sock.Ext.Ecn = true
+		case item == "ecn":
+			sock.Ext.Ecn = true
+		case item == "ecnseen":
+			sock.Ext.Ecnseen = true
 		case item == "send":
 			sock.Ext.Send = pInt64bps(items[idx+1])
 			idx++
@@ -244,7 +254,7 @@ func ParseSsOutput(in string) (Socket, error) {
 			sock.Ext.DeliveryRate = pInt64bps(items[idx+1])
 			idx++
 		default:
-			log.Errorf("unsupport %s\n", item)
+			log.Warnf("unsupport key type  %s\n", item)
 		}
 	}
 	sock.Timestamp = time.Now()
