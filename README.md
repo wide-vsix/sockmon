@@ -122,3 +122,16 @@ postgres: 'postgres://DB_USER:DB_PASSWORD@localhost:5432/DB_NAME'
 filter: 'dport = :443'
 debug: true
 ```
+
+## Run as a systemd service
+See `deployment/systemd/sockmon.service` for an example of a systemd unit file.
+
+```bash
+sudo -s
+cp bin/sockmon /usr/local/bin/
+cp deployment/systemd/sockmon.service /etc/systemd/system/sockmon.service
+mkdir -p  /etc/sockmon/
+echo "debug: true" > /etc/sockmon/config.yml # Set up config as you needed.
+systemctl daemon-reload
+systemctl start sockmon
+```
