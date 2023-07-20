@@ -6,14 +6,15 @@ The initial implementation was developed by Hiroki Shirokura (a.k.a @slankdev) a
 
 ## getting started
 
-- build
-```
-$ make
-```
+- get the latest bin
+[Releases](https://github.com/wide-vsix/sockmon/releases)
 
-- start sockmon daemon
+or build it yourself.
 ```
-$ bin/sockmon 
+git clone https://github.com/wide-vsix/sockmon.git
+cd sockmon
+make
+bin/sockmon
 ```
 
 - get local cache by another processes via REST API
