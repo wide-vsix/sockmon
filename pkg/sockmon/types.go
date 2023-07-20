@@ -35,7 +35,7 @@ type SocketExtendedInformation struct {
 	Ts                     bool    // "ts",
 	Sack                   bool    // "sack",
 	Ecn                    bool    // "ecn",
-	Ecnseen                bool    // "ecnseen",
+	EcnSeen                bool    // "ecnseen",
 	WscaleSnd              int     // "wscale:7,7",
 	WscaleRcv              int     // "wscale:7,7",
 	Rto                    int     // "rto:204",
