@@ -240,6 +240,10 @@ func ParseSsOutput(in string) (Socket, error) {
 			sock.Ext.Sack = true
 		case item == "ecn":
 			sock.Ext.Ecn = true
+		case item == "ecn":
+			sock.Ext.Ecn = true
+		case item == "ecnseen":
+			sock.Ext.Ecnseen = true
 		case item == "send":
 			sock.Ext.Send = pInt64bps(items[idx+1])
 			idx++
