@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os/exec"
+	"reflect"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -144,9 +145,41 @@ func input(in string) {
 }
 
 func handlerDefault(w http.ResponseWriter, r *http.Request) {
-	// filter by query parameters
 	params := r.URL.Query()
+
 	c := FilterByParams(params, cache)
+
+	if onlyParams, ok := params["only"]; ok {
+		// パラメータは一つとassumeする
+		onlyFiled := onlyParams[0]
+
+		// onlyFiledがExtに存在するかチェック
+		v := reflect.ValueOf(SocketExtendedInformation{})
+		vf := v.FieldByName(onlyFiled)
+		if !(vf.IsValid()) {
+			io.WriteString(w, fmt.Sprintf("{'err':'Invalid input ?only=%s'}\n", onlyFiled))
+			return
+		}
+
+		// 返信用のmapを作る map[string]<onlyFieldの実際の型>
+		fieldType := vf.Type()
+		mapType := reflect.MapOf(reflect.TypeOf(""), fieldType)
+		rtnMap := reflect.MakeMap(mapType)
+
+		for k, v := range c {
+			val := reflect.ValueOf(v.Ext).FieldByName(onlyFiled).Interface() // Socket.Extの中の、"onlyFiled"のフィールドの値を取得。
+			rtnMap.SetMapIndex(reflect.ValueOf(k), reflect.ValueOf(val))     // mapを埋める
+		}
+
+		out, err := json.MarshalIndent(rtnMap, "", "  ")
+		if err != nil {
+			io.WriteString(w, fmt.Sprintf("{'err':'%s'}\n", err.Error()))
+			return
+		}
+		io.WriteString(w, fmt.Sprintf("%s\n", string(out)))
+		return
+	}
+
 	out, err := json.MarshalIndent(&c, "", "  ")
 
 	if err != nil {
