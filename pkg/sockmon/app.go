@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os/exec"
 	"reflect"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -30,6 +31,8 @@ var db *gorm.DB
 var filter string
 var configFile string
 var CACHE_SIZE int
+var pollingEnabled bool
+var pollingPeriod int
 
 var cmd *cobra.Command = &cobra.Command{
 	Use:     "sockmon",
@@ -53,6 +56,10 @@ func fn(cmd *cobra.Command, args []string) error {
 	dsn = viper.GetString("postgres")
 	filter = viper.GetString("filter")
 	CACHE_SIZE = viper.GetInt("cache-size")
+
+	// for polling
+	pollingEnabled = viper.GetBool("polling")
+	pollingPeriod = viper.GetInt("polling-period")
 
 	// Change logger initialisation
 	cfg := zap.NewDevelopmentConfig()
@@ -90,39 +97,69 @@ func fn(cmd *cobra.Command, args []string) error {
 			log.Fatalf("Invalid bind address. err: %s", err)
 		}
 	}()
-	cmdName := "stdbuf"
-	cmdArgs := []string{"-i0", "-o0", "-e0", "ss", "-ntieEOH"}
-	if filter != "" {
-		cmdArgs = append(cmdArgs, filter)
-	}
+	log.Infof("sockmon is starting... ")
+	// polling mode
+	if pollingEnabled {
+		log.Infof("mode: polling period:%d", pollingPeriod)
+		ticker := time.NewTicker(time.Duration(pollingPeriod) * time.Millisecond)
+		defer ticker.Stop()
 
-	ec := exec.Command(cmdName, cmdArgs...)
-	stdout, err := ec.StdoutPipe()
-	if err != nil {
-		return err
-	}
-	if err := ec.Start(); err != nil {
-		log.Errorf("%v\n", err)
-		return err
-	}
-	log.Infof("sockmon starting.")
-	for k, v := range viper.AllSettings() {
-		log.Debugf("\t %s -> %s", k, v)
-	}
+		for {
+			select {
+			case <-ticker.C:
+				cmd := exec.Command("ss", "-ntieOH")
+				if filter != "" {
+					cmd.Args = append(cmd.Args, filter)
+				}
+				output, err := cmd.Output()
+				if err != nil {
+					log.Errorf("Failed to run ss command: %v", err)
+					continue
+				}
+				//fmt.Println(string(output))
+				input(string(output))
+			}
+		}
+	} else {
+		// Default mode
+		cmdName := "stdbuf"
+		cmdArgs := []string{"-i0", "-o0", "-e0", "ss", "-ntieEOH"}
+		if filter != "" {
+			cmdArgs = append(cmdArgs, filter)
+		}
 
-	scanner := bufio.NewScanner(stdout)
-	for scanner.Scan() {
-		input(scanner.Text())
-	}
+		ec := exec.Command(cmdName, cmdArgs...)
+		stdout, err := ec.StdoutPipe()
+		if err != nil {
+			return err
+		}
+		if err := ec.Start(); err != nil {
+			log.Errorf("%v\n", err)
+			return err
+		}
+		log.Infof("mode: default")
+		for k, v := range viper.AllSettings() {
+			log.Debugf("\t %s -> %s", k, v)
+		}
 
-	if err := ec.Wait(); err != nil {
-		log.Error("Error at ss process.", err)
-		return err
+		scanner := bufio.NewScanner(stdout)
+		for scanner.Scan() {
+			input(scanner.Text())
+		}
+
+		if err := ec.Wait(); err != nil {
+			log.Error("Error at ss process.", err)
+			return err
+		}
 	}
 	return nil
 }
 
 func input(in string) {
+	if in == "" {
+		// ss input is nothing. no further action
+		return
+	}
 	sock, err := ParseSsOutput(in)
 	if err != nil {
 		log.Errorf("Invalid ss input. err: %s", err)
