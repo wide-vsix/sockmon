@@ -110,15 +110,18 @@ Usage:
   sockmon [flags]
 
 Flags:
-  -b, --bind-address string   Use: sockmon --bind-address <Address:Port> or sockmon -b <Address:Port>  (default ":8931")
-  -c, --config string         Use: sockmon --config <CONFIG_PATH> or sockmon -c <CONFIG_PATH>  Various file formats such as YML, TOML and JSON are available.
-  -D, --debug                 Use: sockmon --debug or sockmon -D to enable debug mode
-  -d, --dump-file string      Use: sockmon --dump-file <FILENAME> or sockmon -d <FILENAME> (by default, it does not dump to file.) 
-  -e, --error-file string     Use: sockmon --error-file <FILENAME> or sockmon -e <FILENAME> (by default, it does not dump to file.) 
-  -f, --filter string         Use: sockmon --filter '<FILTER>' or sockmon -f '<FILTER>' ss filter.  Please take a look at the iproute2 official documentation. e.g. dport = :80 
-  -h, --help                  help for sockmon
-  -p, --postgres string       Use: sockmon --postgres 'postgres://user:password@localhost:5432/dbname' or sockmon -p 'postgres://user:password@localhost:5432/dbname' 
-  -v, --version               version for sockmon
+  -b, --bind-address string    Use: sockmon --bind-address <Address:Port> or sockmon -b <Address:Port>  (default ":8931")
+  -s, --cache-size int32       Use: sockmon --cache-size '<CACHE_SIZE>' or sockmon -s '<CACHE_SIZE>'. The number of records in the local cache to store.   (default 10000)
+  -c, --config string          Use: sockmon --config <CONFIG_PATH> or sockmon -c <CONFIG_PATH>  Various file formats such as YML, TOML and JSON are available.
+  -D, --debug                  Use: sockmon --debug or sockmon -D to enable debug mode
+  -d, --dump-file string       Use: sockmon --dump-file <FILENAME> or sockmon -d <FILENAME> (by default, it does not dump to file.) 
+  -e, --error-file string      Use: sockmon --error-file <FILENAME> or sockmon -e <FILENAME> (by default, it does not dump to file.) 
+  -f, --filter string          Use: sockmon --filter '<FILTER>' or sockmon -f '<FILTER>' ss filter.  Please take a look at the iproute2 official documentation. e.g. dport = :80 
+  -h, --help                   help for sockmon
+  -P, --polling                Use: sockmon --polling  or sockmon -P to enable polling mode for analyze realtime information
+  -t, --polling-period int32   Use: sockmon --polling-period '<PERIOD>' or sockmon -t '<PERIOD>'. The period of polling. It is enabled only in polling mode.  (default 1000)
+  -p, --postgres string        Use: sockmon --postgres 'postgres://user:password@localhost:5432/dbname' or sockmon -p 'postgres://user:password@localhost:5432/dbname' 
+  -v, --version                version for sockmon
 ```
 
 - config format

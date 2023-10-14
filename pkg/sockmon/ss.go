@@ -14,7 +14,7 @@ func ParseSsOutput(in string) (Socket, error) {
 	sock := initializeSocket()
 	items := strings.Fields(in)
 	if len(items) < 5 {
-		return sock, fmt.Errorf("invalid format type1")
+		return sock, fmt.Errorf("socket info is not found")
 	}
 
 	// misc local functions
