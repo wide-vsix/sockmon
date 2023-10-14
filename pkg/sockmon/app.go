@@ -257,8 +257,10 @@ func init() {
 	cmd.PersistentFlags().StringP("postgres", "p", "", "Use: sockmon --postgres 'postgres://user:password@localhost:5432/dbname' or sockmon -p 'postgres://user:password@localhost:5432/dbname' ")
 	cmd.PersistentFlags().StringP("filter", "f", "", "Use: sockmon --filter '<FILTER>' or sockmon -f '<FILTER>' ss filter.  Please take a look at the iproute2 official documentation. e.g. dport = :80 ")
 	cmd.PersistentFlags().Int32P("cache-size", "s", 10000, "Use: sockmon --cache-size '<CACHE_SIZE>' or sockmon -s '<CACHE_SIZE>'. The number of records in the local cache to store.  ")
+	cmd.PersistentFlags().Int32P("polling-period", "t", 1000, "Use: sockmon --polling-period '<PERIOD>' or sockmon -t '<PERIOD>'. The period of polling. It is enabled only in polling mode. ")
 
 	cmd.PersistentFlags().BoolP("debug", "D", false, "Use: sockmon --debug or sockmon -D to enable debug mode")
+	cmd.PersistentFlags().BoolP("polling", "P", false, "Use: sockmon --polling  or sockmon -P to enable polling mode for analyze realtime information")
 
 	viper.BindPFlag("dump-file", cmd.PersistentFlags().Lookup("dump-file"))
 	viper.BindPFlag("error-file", cmd.PersistentFlags().Lookup("error-file"))
@@ -266,7 +268,10 @@ func init() {
 	viper.BindPFlag("postgres", cmd.PersistentFlags().Lookup("postgres"))
 	viper.BindPFlag("filter", cmd.PersistentFlags().Lookup("filter"))
 	viper.BindPFlag("cache-size", cmd.PersistentFlags().Lookup("cache-size"))
+	viper.BindPFlag("polling-period", cmd.PersistentFlags().Lookup("polling-period"))
 
 	// Bind debug flag to viper
 	viper.BindPFlag("debug", cmd.PersistentFlags().Lookup("debug"))
+	viper.BindPFlag("polling", cmd.PersistentFlags().Lookup("polling"))
+
 }
