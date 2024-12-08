@@ -92,6 +92,8 @@ func fn(cmd *cobra.Command, args []string) error {
 	go func() {
 		http.HandleFunc("/", handlerDefault)
 		http.HandleFunc("/rtt", handlerRttOnly)
+		http.HandleFunc("/lossrate", handleLossRate)
+		http.HandleFunc("/retransrate", handleRetransRate)
 		http.HandleFunc("/only", handerByFieldName)
 		if err := http.ListenAndServe(bindAddress, nil); err != nil {
 			log.Fatalf("Invalid bind address. err: %s", err)
@@ -278,6 +280,73 @@ func handlerRttOnly(w http.ResponseWriter, r *http.Request) {
 	}
 
 	out, err := json.MarshalIndent(&rttcache, "", "  ")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to encode result: %v", err), http.StatusInternalServerError)
+		return
+	}
+	io.WriteString(w, fmt.Sprintf("%s\n", string(out)))
+}
+
+func handleLossRate(w http.ResponseWriter, r *http.Request) {
+	// lostもしくはretransTotalからとsegs_outからロスレートを計算したい！
+
+	// filter by query parameters
+	params := r.URL.Query()
+	c := FilterByParams(params, cache)
+
+	lossRateCache := map[string]float32{}
+	for key, val := range c {
+		// 多分lostはセグメント数。だと思う多分。
+		lost := val.Ext.Lost
+		if lost < 0 {
+			// -1が入る時はそれは0や
+			lost = 0
+		}
+		segsout := val.Ext.SegsOut
+
+		// ゼロ除算回避
+		if segsout > 0 {
+			lossRateCache[key] = float32(lost) / float32(segsout)
+		} else {
+			lossRateCache[key] = 0
+		}
+	}
+
+	out, err := json.MarshalIndent(&lossRateCache, "", "  ")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to encode result: %v", err), http.StatusInternalServerError)
+		return
+	}
+	io.WriteString(w, fmt.Sprintf("%s\n", string(out)))
+}
+
+func handleRetransRate(w http.ResponseWriter, r *http.Request) {
+	// retransTotalとsegs_outからロスレートを計算したい！
+	// lostとの違いを確かめる用
+
+	// filter by query parameters
+	params := r.URL.Query()
+	c := FilterByParams(params, cache)
+
+	retransRateCache := map[string]float32{}
+	for key, val := range c {
+		// retransTotalはセグメント数
+		retransTotal := val.Ext.RetransTotal
+		if retransTotal < 0 {
+			// -1が入る時はそれは0や
+			retransTotal = 0
+		}
+		segsout := val.Ext.SegsOut
+
+		// ゼロ除算回避
+		if segsout > 0 {
+			retransRateCache[key] = float32(retransTotal) / float32(segsout)
+		} else {
+			retransRateCache[key] = 0
+		}
+	}
+
+	out, err := json.MarshalIndent(&retransRateCache, "", "  ")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to encode result: %v", err), http.StatusInternalServerError)
 		return
