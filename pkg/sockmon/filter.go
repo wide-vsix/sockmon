@@ -4,6 +4,7 @@ import (
 	"net/netip"
 	"net/url"
 	"strconv"
+	"time"
 )
 
 func FilterByParams(params url.Values, socks map[string]Socket) map[string]Socket {
@@ -37,7 +38,17 @@ func FilterByParams(params url.Values, socks map[string]Socket) map[string]Socke
 				continue
 			}
 			c = FilterLocalCacheByDport(dport, c)
+		case "recent_seconds":
+			seconds, err := strconv.Atoi(v[0])
+			if err != nil {
+				continue
+			}
+			if seconds < 0 {
+				continue
+			}
+			c = FilterLocalCacheByRecentSeconds(seconds, c)
 		}
+
 	}
 	return c
 }
@@ -73,6 +84,18 @@ func FilterLocalCacheByDport(dport int, sockCache map[string]Socket) map[string]
 	socks := map[string]Socket{}
 	for key, val := range sockCache {
 		if val.Dport == dport {
+			socks[key] = val
+		}
+	}
+	return socks
+}
+
+func FilterLocalCacheByRecentSeconds(seconds int, sockCache map[string]Socket) map[string]Socket {
+	socks := map[string]Socket{}
+	duration := time.Duration(seconds) * time.Second
+	cutoff := time.Now().Add(-duration)
+	for key, val := range sockCache {
+		if val.Timestamp.After(cutoff) {
 			socks[key] = val
 		}
 	}
