@@ -47,8 +47,11 @@ func FilterByParams(params url.Values, socks map[string]Socket) map[string]Socke
 				continue
 			}
 			c = FilterLocalCacheByRecentSeconds(seconds, c)
+		case "inbound":
+			c = FilterLocalCacheyTrafficDirection(true, c)
+		case "outbound":
+			c = FilterLocalCacheyTrafficDirection(false, c)
 		}
-
 	}
 	return c
 }
@@ -98,6 +101,25 @@ func FilterLocalCacheByRecentSeconds(seconds int, sockCache map[string]Socket) m
 		if val.Timestamp.After(cutoff) {
 			socks[key] = val
 		}
+	}
+	return socks
+}
+
+func FilterLocalCacheyTrafficDirection(inbound bool, sockCache map[string]Socket) map[string]Socket {
+	socks := make(map[string]Socket)
+	for key, val := range sockCache {
+		if inbound {
+			// inbound: DataSegsOut > DataSegsIn
+			if val.Ext.DataSegsOut > val.Ext.DataSegsIn {
+				socks[key] = val
+			}
+		} else {
+			// outbound: DataSegsIn > DataSegsOut
+			if val.Ext.DataSegsIn > val.Ext.DataSegsOut {
+				socks[key] = val
+			}
+		}
+		// DataSegsIn == DataSegsOut の場合は何もしない (分類しない)
 	}
 	return socks
 }
