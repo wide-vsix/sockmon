@@ -43,6 +43,10 @@ func ParseSsOutput(in string) (Socket, error) {
 			if err != nil {
 				return netip.Addr{}, fmt.Errorf("Invalid IP input detected : %s", in)
 			}
+			// convert IPv4 mapped IPv6 address to pure IPv4 address
+			if ipa.Is4In6() {
+				ipa = netip.AddrFrom4(ipa.As4())
+			}
 			return ipa, nil
 		}
 	}
